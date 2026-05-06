@@ -1,0 +1,214 @@
+import Phaser from "phaser";
+import { Controls, WASD_BINDINGS, ARROW_BINDINGS } from "../input/Controls";
+import { Fighter, FighterConfig } from "../entities/Fighter";
+
+const WORLD_W = 960;
+const WORLD_H = 540;
+const GROUND_Y = 500;
+const FRAME_W = 200;
+const FRAME_H = 200;
+
+interface SheetSpec {
+  anim: string;
+  file: string;
+  frames: number;
+  frameRate: number;
+  repeat: number;
+}
+
+const HERO1_SHEETS: SheetSpec[] = [
+  { anim: "idle",    file: "Idle",     frames: 8, frameRate: 10, repeat: -1 },
+  { anim: "run",     file: "Run",      frames: 8, frameRate: 14, repeat: -1 },
+  { anim: "jump",    file: "Jump",     frames: 2, frameRate: 6,  repeat: 0 },
+  { anim: "fall",    file: "Fall",     frames: 2, frameRate: 6,  repeat: 0 },
+  { anim: "attack1", file: "Attack1",  frames: 6, frameRate: 18, repeat: 0 },
+  { anim: "attack2", file: "Attack2",  frames: 6, frameRate: 18, repeat: 0 },
+  { anim: "hit",     file: "Take Hit", frames: 4, frameRate: 12, repeat: 0 },
+  { anim: "death",   file: "Death",    frames: 6, frameRate: 8,  repeat: 0 },
+];
+
+const HERO2_SHEETS: SheetSpec[] = [
+  { anim: "idle",    file: "Idle",     frames: 4, frameRate: 8,  repeat: -1 },
+  { anim: "run",     file: "Run",      frames: 8, frameRate: 14, repeat: -1 },
+  { anim: "jump",    file: "Jump",     frames: 2, frameRate: 6,  repeat: 0 },
+  { anim: "fall",    file: "Fall",     frames: 2, frameRate: 6,  repeat: 0 },
+  { anim: "attack1", file: "Attack1",  frames: 4, frameRate: 14, repeat: 0 },
+  { anim: "attack2", file: "Attack2",  frames: 4, frameRate: 14, repeat: 0 },
+  { anim: "hit",     file: "Take hit", frames: 3, frameRate: 12, repeat: 0 },
+  { anim: "death",   file: "Death",    frames: 7, frameRate: 8,  repeat: 0 },
+];
+
+export class GameScene extends Phaser.Scene {
+  private p1!: Fighter;
+  private p2!: Fighter;
+  private p1HpBar!: Phaser.GameObjects.Rectangle;
+  private p2HpBar!: Phaser.GameObjects.Rectangle;
+  private gameOver = false;
+
+  constructor() {
+    super("GameScene");
+  }
+
+  preload() {
+    for (const s of HERO1_SHEETS) {
+      const url = `/sprites/martial-hero/${encodeURIComponent(s.file)}.png`;
+      this.load.spritesheet(`hero1-${s.anim}`, url, {
+        frameWidth: FRAME_W,
+        frameHeight: FRAME_H,
+      });
+    }
+    for (const s of HERO2_SHEETS) {
+      const url = `/sprites/martial-hero-2/${encodeURIComponent(s.file)}.png`;
+      this.load.spritesheet(`hero2-${s.anim}`, url, {
+        frameWidth: FRAME_W,
+        frameHeight: FRAME_H,
+      });
+    }
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor("#222533");
+
+    // World bottom = ground level; gravity will drop fighters onto it.
+    this.physics.world.setBounds(0, 0, WORLD_W, GROUND_Y);
+
+    // Visible ground
+    const groundHeight = WORLD_H - GROUND_Y;
+    this.add.rectangle(
+      WORLD_W / 2,
+      GROUND_Y + groundHeight / 2,
+      WORLD_W,
+      groundHeight,
+      0x2b1d10,
+    );
+    this.add.rectangle(WORLD_W / 2, GROUND_Y, WORLD_W, 2, 0x6b4a2a);
+
+    this.createAnims("hero1", HERO1_SHEETS);
+    this.createAnims("hero2", HERO2_SHEETS);
+
+    const sharedBody = {
+      scale: 2.5,
+      bodySize: { w: 40, h: 100 },
+      bodyOffset: { x: 80, y: 75 },
+    };
+
+    const p1Config: FighterConfig = {
+      ...sharedBody,
+      spriteKey: "hero1",
+      facing: "right",
+      speed: 260,
+      jumpVelocity: -700,
+      hp: 100,
+      attackReach: 110,
+      attackDamage: 10,
+    };
+    const p2Config: FighterConfig = {
+      ...sharedBody,
+      spriteKey: "hero2",
+      facing: "left",
+      speed: 240,
+      jumpVelocity: -700,
+      hp: 100,
+      attackReach: 110,
+      attackDamage: 10,
+    };
+
+    this.p1 = new Fighter(this, 280, 200, p1Config);
+    this.p2 = new Fighter(this, 680, 200, p2Config);
+
+    this.p1.setControls(new Controls(this, WASD_BINDINGS));
+    this.p2.setControls(new Controls(this, ARROW_BINDINGS));
+
+    this.p1.setOpponent(this.p2);
+    this.p2.setOpponent(this.p1);
+
+    // Fighters can't walk through each other
+    this.physics.add.collider(this.p1.sprite, this.p2.sprite);
+
+    this.createHud();
+
+    this.add.text(
+      WORLD_W / 2,
+      10,
+      "P1: WASD + J/K     P2: Arrows + Numpad 1/2",
+      { fontSize: "14px", color: "#cccccc" },
+    ).setOrigin(0.5, 0);
+  }
+
+  private createAnims(prefix: string, sheets: SheetSpec[]) {
+    for (const s of sheets) {
+      const key = `${prefix}-${s.anim}`;
+      if (this.anims.exists(key)) continue;
+      this.anims.create({
+        key,
+        frames: this.anims.generateFrameNumbers(key, {
+          start: 0,
+          end: s.frames - 1,
+        }),
+        frameRate: s.frameRate,
+        repeat: s.repeat,
+      });
+    }
+  }
+
+  private createHud() {
+    const barW = 360;
+    const barH = 22;
+    // P1 (left)
+    this.add.rectangle(40, 36, barW, barH, 0x000000)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(2, 0xffffff);
+    this.p1HpBar = this.add.rectangle(42, 36, barW - 4, barH - 4, 0xb22222)
+      .setOrigin(0, 0.5);
+    this.add.text(40, 56, "P1", { fontSize: "14px", color: "#ffffff" })
+      .setOrigin(0, 0);
+
+    // P2 (right)
+    this.add.rectangle(WORLD_W - 40, 36, barW, barH, 0x000000)
+      .setOrigin(1, 0.5)
+      .setStrokeStyle(2, 0xffffff);
+    this.p2HpBar = this.add.rectangle(WORLD_W - 42, 36, barW - 4, barH - 4, 0xb22222)
+      .setOrigin(1, 0.5);
+    this.add.text(WORLD_W - 40, 56, "P2", { fontSize: "14px", color: "#ffffff" })
+      .setOrigin(1, 0);
+  }
+
+  update() {
+    if (this.gameOver) return;
+    this.p1.update();
+    this.p2.update();
+    this.refreshHud();
+    this.checkVictory();
+  }
+
+  private refreshHud() {
+    const maxW = 356;
+    this.p1HpBar.width = Math.max(0, maxW * (this.p1.hp / this.p1.maxHp));
+    this.p2HpBar.width = Math.max(0, maxW * (this.p2.hp / this.p2.maxHp));
+  }
+
+  private checkVictory() {
+    if (this.p1.isAlive() && this.p2.isAlive()) return;
+    this.gameOver = true;
+
+    const winner = !this.p1.isAlive() && !this.p2.isAlive()
+      ? "Draw"
+      : this.p1.isAlive()
+        ? "Player 1 wins!"
+        : "Player 2 wins!";
+
+    this.add.text(WORLD_W / 2, WORLD_H / 2 - 20, winner, {
+      fontSize: "48px",
+      color: "#ffd700",
+      stroke: "#000000",
+      strokeThickness: 6,
+    }).setOrigin(0.5);
+
+    this.add.text(WORLD_W / 2, WORLD_H / 2 + 40, "Press R to restart", {
+      fontSize: "20px",
+      color: "#ffffff",
+    }).setOrigin(0.5);
+
+    this.input.keyboard?.once("keydown-R", () => this.scene.restart());
+  }
+}
