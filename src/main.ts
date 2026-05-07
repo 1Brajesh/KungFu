@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { LobbyScene } from "./scenes/LobbyScene";
 import { GameScene } from "./scenes/GameScene";
 
 new Phaser.Game({
@@ -15,5 +16,5 @@ new Phaser.Game({
       debug: false,
     },
   },
-  scene: [GameScene],
+  scene: [LobbyScene, GameScene],
 });

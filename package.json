@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=kungfu --branch=main --commit-dirty=true"
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=kungfu --branch=main --commit-dirty=true",
+    "deploy:relay": "npm --prefix worker run deploy"
   },
   "dependencies": {
     "phaser": "^3.80.1"

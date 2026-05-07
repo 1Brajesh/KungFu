@@ -50,15 +50,17 @@ export class KeyboardInput implements FighterInput {
   heavyJustPressed = false;
   dodgeJustPressed = false;
 
-  private readonly left: Phaser.Input.Keyboard.Key;
-  private readonly right: Phaser.Input.Keyboard.Key;
-  private readonly crouch: Phaser.Input.Keyboard.Key;
-  private readonly block: Phaser.Input.Keyboard.Key;
-  private readonly dodge: Phaser.Input.Keyboard.Key;
-  private readonly jump: Phaser.Input.Keyboard.Key;
-  private readonly attack1: Phaser.Input.Keyboard.Key;
-  private readonly attack2: Phaser.Input.Keyboard.Key;
-  private readonly heavy: Phaser.Input.Keyboard.Key;
+  // Raw keys exposed publicly so the network layer can read held-state
+  // (isDown) for ALL keys when packing input messages for the host.
+  readonly left: Phaser.Input.Keyboard.Key;
+  readonly right: Phaser.Input.Keyboard.Key;
+  readonly crouch: Phaser.Input.Keyboard.Key;
+  readonly block: Phaser.Input.Keyboard.Key;
+  readonly dodge: Phaser.Input.Keyboard.Key;
+  readonly jump: Phaser.Input.Keyboard.Key;
+  readonly attack1: Phaser.Input.Keyboard.Key;
+  readonly attack2: Phaser.Input.Keyboard.Key;
+  readonly heavy: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene, bindings: ControlBindings) {
     const kb = scene.input.keyboard!;

@@ -155,6 +155,44 @@ export class Fighter {
     this.sprite.play(`${this.spriteKey}-victory`);
   }
 
+  /**
+   * For online guest mode: snap the visible fighter to the host's
+   * authoritative state. Does NOT advance the state machine — caller is
+   * responsible for not calling update() on this fighter.
+   */
+  applyRemoteState(snap: {
+    x: number;
+    y: number;
+    facing: 0 | 1;
+    state: string;
+    anim: string;
+    frame: number;
+    hp: number;
+  }) {
+    this.sprite.setPosition(snap.x, snap.y);
+    this.facing = snap.facing === 1 ? "left" : "right";
+    this.sprite.setFlipX(this.facing === "left");
+    this.hp = snap.hp;
+    this.state = snap.state as FighterStateName;
+
+    if (snap.anim && this.sprite.anims.currentAnim?.key !== snap.anim) {
+      this.sprite.play(snap.anim);
+    }
+    const currentAnim = this.sprite.anims.currentAnim;
+    if (currentAnim && snap.frame >= 1) {
+      const target = currentAnim.frames[snap.frame - 1];
+      if (target) this.sprite.anims.setCurrentFrame(target);
+    }
+  }
+
+  /** Disable physics simulation; used on guest where positions come from host. */
+  disablePhysics() {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.setVelocity(0, 0);
+    body.enable = false;
+  }
+
   update() {
     if (this.state === "death" || this.state === "victory") return;
 
