@@ -57,6 +57,11 @@ export class GameScene extends Phaser.Scene {
     super("GameScene");
   }
 
+  init() {
+    this.gameOver = false;
+    this.p2Mode = "cpu";
+  }
+
   preload() {
     for (const s of HERO1_SHEETS) {
       const url = `/sprites/martial-hero/${encodeURIComponent(s.file)}.png`;
