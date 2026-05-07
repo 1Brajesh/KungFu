@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { Controls } from "../input/Controls";
+import type { FighterInput } from "../input/FighterInput";
 
 export type FighterStateName =
   | "idle"
@@ -33,7 +33,7 @@ export class Fighter {
   facing: "left" | "right";
   state: FighterStateName = "idle";
 
-  private controls?: Controls;
+  private input?: FighterInput;
   private opponent?: Fighter;
   private readonly spriteKey: string;
   private readonly speed: number;
@@ -86,8 +86,12 @@ export class Fighter {
     );
   }
 
-  setControls(c: Controls) {
-    this.controls = c;
+  setInput(i: FighterInput) {
+    this.input = i;
+  }
+
+  getInput(): FighterInput | undefined {
+    return this.input;
   }
 
   setOpponent(o: Fighter) {
@@ -120,7 +124,7 @@ export class Fighter {
       return;
     }
 
-    if (!this.controls) {
+    if (!this.input) {
       body.setVelocityX(0);
       if (body.onFloor()) this.transitionTo("idle");
       this.applyFacing();
@@ -128,22 +132,22 @@ export class Fighter {
     }
 
     if (body.onFloor()) {
-      if (Phaser.Input.Keyboard.JustDown(this.controls.attack1)) {
+      if (this.input.attack1JustPressed) {
         this.startAttack(1);
         return;
       }
-      if (Phaser.Input.Keyboard.JustDown(this.controls.attack2)) {
+      if (this.input.attack2JustPressed) {
         this.startAttack(2);
         return;
       }
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.controls.jump) && body.onFloor()) {
+    if (this.input.jumpJustPressed && body.onFloor()) {
       body.setVelocityY(this.jumpVelocity);
     }
 
-    const left = this.controls.left.isDown;
-    const right = this.controls.right.isDown;
+    const left = this.input.leftDown;
+    const right = this.input.rightDown;
     if (left && !right) {
       body.setVelocityX(-this.speed);
     } else if (right && !left) {

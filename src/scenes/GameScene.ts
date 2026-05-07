@@ -1,6 +1,8 @@
 import Phaser from "phaser";
-import { Controls, WASD_BINDINGS, ARROW_BINDINGS } from "../input/Controls";
+import { KeyboardInput, WASD_BINDINGS, ARROW_BINDINGS } from "../input/KeyboardInput";
+import type { FighterInput } from "../input/FighterInput";
 import { Fighter, FighterConfig } from "../entities/Fighter";
+import { AIController } from "../ai/AIController";
 
 const WORLD_W = 960;
 const WORLD_H = 540;
@@ -38,11 +40,17 @@ const HERO2_SHEETS: SheetSpec[] = [
   { anim: "death",   file: "Death",    frames: 7, frameRate: 8,  repeat: 0 },
 ];
 
+type P2Mode = "cpu" | "human";
+
 export class GameScene extends Phaser.Scene {
   private p1!: Fighter;
   private p2!: Fighter;
+  private p1Input!: FighterInput;
+  private p2Input!: FighterInput;
   private p1HpBar!: Phaser.GameObjects.Rectangle;
   private p2HpBar!: Phaser.GameObjects.Rectangle;
+  private p2ModeLabel!: Phaser.GameObjects.Text;
+  private p2Mode: P2Mode = "cpu";
   private gameOver = false;
 
   constructor() {
@@ -69,10 +77,8 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor("#222533");
 
-    // World bottom = ground level; gravity will drop fighters onto it.
     this.physics.world.setBounds(0, 0, WORLD_W, GROUND_Y);
 
-    // Visible ground
     const groundHeight = WORLD_H - GROUND_Y;
     this.add.rectangle(
       WORLD_W / 2,
@@ -116,13 +122,16 @@ export class GameScene extends Phaser.Scene {
     this.p1 = new Fighter(this, 280, 200, p1Config);
     this.p2 = new Fighter(this, 680, 200, p2Config);
 
-    this.p1.setControls(new Controls(this, WASD_BINDINGS));
-    this.p2.setControls(new Controls(this, ARROW_BINDINGS));
-
     this.p1.setOpponent(this.p2);
     this.p2.setOpponent(this.p1);
 
-    // Fighters can't walk through each other
+    this.p1Input = new KeyboardInput(this, WASD_BINDINGS);
+    this.p1.setInput(this.p1Input);
+
+    // P2 starts as CPU; press T to swap to human (arrow keys + Numpad 1/2)
+    this.p2Input = new AIController(this.p2, this.p1, "medium");
+    this.p2.setInput(this.p2Input);
+
     this.physics.add.collider(this.p1.sprite, this.p2.sprite);
 
     this.createHud();
@@ -130,9 +139,24 @@ export class GameScene extends Phaser.Scene {
     this.add.text(
       WORLD_W / 2,
       10,
-      "P1: WASD + J/K     P2: Arrows + Numpad 1/2",
+      "P1: WASD + J/K     T: toggle CPU/human for P2",
       { fontSize: "14px", color: "#cccccc" },
     ).setOrigin(0.5, 0);
+
+    this.input.keyboard?.on("keydown-T", () => this.toggleP2Mode());
+  }
+
+  private toggleP2Mode() {
+    if (this.gameOver) return;
+    if (this.p2Mode === "cpu") {
+      this.p2Input = new KeyboardInput(this, ARROW_BINDINGS);
+      this.p2Mode = "human";
+    } else {
+      this.p2Input = new AIController(this.p2, this.p1, "medium");
+      this.p2Mode = "cpu";
+    }
+    this.p2.setInput(this.p2Input);
+    this.refreshP2ModeLabel();
   }
 
   private createAnims(prefix: string, sheets: SheetSpec[]) {
@@ -154,27 +178,34 @@ export class GameScene extends Phaser.Scene {
   private createHud() {
     const barW = 360;
     const barH = 22;
-    // P1 (left)
     this.add.rectangle(40, 36, barW, barH, 0x000000)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xffffff);
     this.p1HpBar = this.add.rectangle(42, 36, barW - 4, barH - 4, 0xb22222)
       .setOrigin(0, 0.5);
-    this.add.text(40, 56, "P1", { fontSize: "14px", color: "#ffffff" })
+    this.add.text(40, 56, "P1 [HUMAN]", { fontSize: "14px", color: "#ffffff" })
       .setOrigin(0, 0);
 
-    // P2 (right)
     this.add.rectangle(WORLD_W - 40, 36, barW, barH, 0x000000)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, 0xffffff);
     this.p2HpBar = this.add.rectangle(WORLD_W - 42, 36, barW - 4, barH - 4, 0xb22222)
       .setOrigin(1, 0.5);
-    this.add.text(WORLD_W - 40, 56, "P2", { fontSize: "14px", color: "#ffffff" })
-      .setOrigin(1, 0);
+    this.p2ModeLabel = this.add.text(WORLD_W - 40, 56, "", {
+      fontSize: "14px",
+      color: "#ffffff",
+    }).setOrigin(1, 0);
+    this.refreshP2ModeLabel();
+  }
+
+  private refreshP2ModeLabel() {
+    this.p2ModeLabel.setText(this.p2Mode === "cpu" ? "P2 [CPU]" : "P2 [HUMAN]");
   }
 
   update() {
     if (this.gameOver) return;
+    this.p1Input.update();
+    this.p2Input.update();
     this.p1.update();
     this.p2.update();
     this.refreshHud();

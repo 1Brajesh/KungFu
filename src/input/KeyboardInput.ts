@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { FighterInput } from "./FighterInput";
 
 export interface ControlBindings {
   left: number;
@@ -26,12 +27,18 @@ export const ARROW_BINDINGS: ControlBindings = {
   attack2: KC.NUMPAD_TWO,
 };
 
-export class Controls {
-  readonly left: Phaser.Input.Keyboard.Key;
-  readonly right: Phaser.Input.Keyboard.Key;
-  readonly jump: Phaser.Input.Keyboard.Key;
-  readonly attack1: Phaser.Input.Keyboard.Key;
-  readonly attack2: Phaser.Input.Keyboard.Key;
+export class KeyboardInput implements FighterInput {
+  leftDown = false;
+  rightDown = false;
+  jumpJustPressed = false;
+  attack1JustPressed = false;
+  attack2JustPressed = false;
+
+  private readonly left: Phaser.Input.Keyboard.Key;
+  private readonly right: Phaser.Input.Keyboard.Key;
+  private readonly jump: Phaser.Input.Keyboard.Key;
+  private readonly attack1: Phaser.Input.Keyboard.Key;
+  private readonly attack2: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene, bindings: ControlBindings) {
     const kb = scene.input.keyboard!;
@@ -40,5 +47,14 @@ export class Controls {
     this.jump = kb.addKey(bindings.jump);
     this.attack1 = kb.addKey(bindings.attack1);
     this.attack2 = kb.addKey(bindings.attack2);
+  }
+
+  update() {
+    const JD = Phaser.Input.Keyboard.JustDown;
+    this.leftDown = this.left.isDown;
+    this.rightDown = this.right.isDown;
+    this.jumpJustPressed = JD(this.jump);
+    this.attack1JustPressed = JD(this.attack1);
+    this.attack2JustPressed = JD(this.attack2);
   }
 }
