@@ -11,7 +11,9 @@ export type FighterStateName =
   | "hit"
   | "death"
   | "victory"
-  | "knockdown";
+  | "knockdown"
+  | "crouch"
+  | "lowkick";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -74,10 +76,18 @@ export class Fighter {
     this.sprite.on(
       Phaser.Animations.Events.ANIMATION_COMPLETE,
       (anim: Phaser.Animations.Animation) => {
-        if (anim.key.endsWith("-attack1") || anim.key.endsWith("-attack2")) {
+        if (
+          anim.key.endsWith("-attack1") ||
+          anim.key.endsWith("-attack2") ||
+          anim.key.endsWith("-lowkick")
+        ) {
           this.isAttacking = false;
           this.attackHasLanded = false;
-          if (this.state === "attack1" || this.state === "attack2") {
+          if (
+            this.state === "attack1" ||
+            this.state === "attack2" ||
+            this.state === "lowkick"
+          ) {
             this.state = "idle";
             this.playAnim("idle");
           }
@@ -148,6 +158,18 @@ export class Fighter {
     if (!this.input) {
       body.setVelocityX(0);
       if (body.onFloor()) this.transitionTo("idle");
+      this.applyFacing();
+      return;
+    }
+
+    // Crouch — held key, locks horizontal movement, enables LowKick variant
+    if (this.input.crouchDown && body.onFloor()) {
+      body.setVelocityX(0);
+      if (this.input.attack1JustPressed) {
+        this.startLowKick();
+        return;
+      }
+      this.transitionTo("crouch");
       this.applyFacing();
       return;
     }
@@ -270,6 +292,15 @@ export class Fighter {
     const key = which === 1 ? "attack1" : "attack2";
     this.state = key;
     this.sprite.play(`${this.spriteKey}-${key}`);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+  }
+
+  private startLowKick() {
+    this.isAttacking = true;
+    this.attackHasLanded = false;
+    this.state = "lowkick";
+    this.sprite.play(`${this.spriteKey}-lowkick`);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
   }
