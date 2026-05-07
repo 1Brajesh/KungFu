@@ -17,7 +17,8 @@ export type FighterStateName =
   | "block"
   | "dodge"
   | "heavy"
-  | "combo";
+  | "combo"
+  | "downsmash";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -90,7 +91,8 @@ export class Fighter {
           anim.key.endsWith("-attack2") ||
           anim.key.endsWith("-lowkick") ||
           anim.key.endsWith("-heavy") ||
-          anim.key.endsWith("-combo")
+          anim.key.endsWith("-combo") ||
+          anim.key.endsWith("-downsmash")
         ) {
           if (anim.key.endsWith("-attack1")) {
             this.lastPunchEndedAt = performance.now();
@@ -102,7 +104,8 @@ export class Fighter {
             this.state === "attack2" ||
             this.state === "lowkick" ||
             this.state === "heavy" ||
-            this.state === "combo"
+            this.state === "combo" ||
+            this.state === "downsmash"
           ) {
             this.state = "idle";
             this.playAnim("idle");
@@ -243,6 +246,10 @@ export class Fighter {
         this.startAttack(2);
         return;
       }
+    } else if (this.input.attack1JustPressed) {
+      // Airborne + Punch = DownSmash (slams downward)
+      this.startDownSmash();
+      return;
     }
 
     if (this.input.jumpJustPressed && body.onFloor()) {
@@ -392,6 +399,16 @@ export class Fighter {
     this.sprite.play(`${this.spriteKey}-heavy`);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
+  }
+
+  private startDownSmash() {
+    this.isAttacking = true;
+    this.attackHasLanded = false;
+    this.currentAttackDamage = 20;
+    this.state = "downsmash";
+    this.sprite.play(`${this.spriteKey}-downsmash`);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityY(450); // slam-down impulse on top of gravity
   }
 
   private startCombo() {

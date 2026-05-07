@@ -35,6 +35,7 @@ const FIGHTER_SHEETS: SheetSpec[] = [
   { anim: "dodge",     file: "DodgeRoll", frames: 16, frameRate: 26, repeat: 0 },
   { anim: "heavy",     file: "HeavySmash",frames: 15, frameRate: 20, repeat: 0 },
   { anim: "combo",     file: "Combo1",    frames: 15, frameRate: 22, repeat: 0 },
+  { anim: "downsmash", file: "DownSmash", frames: 15, frameRate: 22, repeat: 0 },
 ];
 
 type P2Mode = "cpu" | "human";
