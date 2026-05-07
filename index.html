@@ -13,10 +13,13 @@
         touch-action: none;
       }
       /* Cap game container at native game size on desktop so Phaser FIT
-         doesn't upscale; on small viewports it shrinks to fit. */
+         doesn't upscale; on small viewports it shrinks to fit.
+         100svh = "small viewport height" — the always-visible area on
+         iOS Safari, EXCLUDING the URL bar (100vh on iOS lies). */
       #game {
         width: min(100vw, 960px);
         height: min(100vh, 540px);
+        height: min(100svh, 540px);
       }
       #game canvas { display: block; }
 
