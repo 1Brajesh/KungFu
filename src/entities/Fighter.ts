@@ -10,7 +10,8 @@ export type FighterStateName =
   | "attack2"
   | "hit"
   | "death"
-  | "victory";
+  | "victory"
+  | "knockdown";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -85,6 +86,10 @@ export class Fighter {
           this.state = "idle";
           this.playAnim("idle");
         }
+        if (anim.key.endsWith("-knockdown") && this.state === "knockdown") {
+          this.state = "idle";
+          this.playAnim("idle");
+        }
         if (anim.key.endsWith("-death") || anim.key.endsWith("-victory")) {
           this.sprite.anims.pause();
         }
@@ -125,8 +130,10 @@ export class Fighter {
       this.facing = this.opponent.sprite.x < this.sprite.x ? "left" : "right";
     }
 
-    if (this.state === "hit") {
-      body.setVelocityX(0);
+    if (this.state === "hit" || this.state === "knockdown") {
+      // Knockback velocity decays naturally rather than being zeroed instantly
+      const decayed = body.velocity.x * 0.9;
+      body.setVelocityX(Math.abs(decayed) < 5 ? 0 : decayed);
       this.applyFacing();
       return;
     }
@@ -185,15 +192,26 @@ export class Fighter {
     if (this.state === "death") return;
     this.hp -= damage;
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    body.setVelocityX(0);
+
+    // Push away from attacker (or if no opponent context, away from facing)
+    const knockbackDir =
+      this.opponent && this.opponent.sprite.x < this.sprite.x ? 1 : -1;
+
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = "death";
       this.isAttacking = false;
+      body.setVelocityX(knockbackDir * 100);
       this.sprite.play(`${this.spriteKey}-death`);
+    } else if (damage >= 20) {
+      this.state = "knockdown";
+      this.isAttacking = false;
+      body.setVelocityX(knockbackDir * 350);
+      this.sprite.play(`${this.spriteKey}-knockdown`);
     } else {
       this.state = "hit";
       this.isAttacking = false;
+      body.setVelocityX(knockbackDir * 200);
       this.sprite.play(`${this.spriteKey}-hit`);
     }
   }

@@ -27,7 +27,8 @@ const FIGHTER_SHEETS: SheetSpec[] = [
   { anim: "attack2", file: "Kick",      frames: 16, frameRate: 24, repeat: 0 },
   { anim: "hit",     file: "LightHit",  frames: 15, frameRate: 18, repeat: 0 },
   { anim: "death",   file: "Death",     frames: 15, frameRate: 12, repeat: 0 },
-  { anim: "victory", file: "Victory",   frames: 16, frameRate: 10, repeat: 0 },
+  { anim: "victory",   file: "Victory",   frames: 16, frameRate: 10, repeat: 0 },
+  { anim: "knockdown", file: "Knockdown", frames: 16, frameRate: 14, repeat: 0 },
 ];
 
 type P2Mode = "cpu" | "human";
