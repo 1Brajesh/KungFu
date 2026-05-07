@@ -408,7 +408,10 @@ export class Fighter {
     this.state = "downsmash";
     this.sprite.play(`${this.spriteKey}-downsmash`);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    body.setVelocityY(450); // slam-down impulse on top of gravity
+    // The anim is a leap-into-aerial-spin (NOT a downward slam, despite
+    // the name). Give an upward impulse so the spin frames play at
+    // altitude; gravity brings the fighter back down to land naturally.
+    body.setVelocityY(-300);
   }
 
   private startCombo() {
