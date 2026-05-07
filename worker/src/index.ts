@@ -113,7 +113,7 @@ export default {
     }
 
     const code = decodeURIComponent(url.pathname.replace(/^\/+/, "")).toUpperCase();
-    if (!code || code.length < 3 || code.length > 12 || !/^[A-Z0-9]+$/.test(code)) {
+    if (!code || code.length < 1 || code.length > 12 || !/^[A-Z0-9]+$/.test(code)) {
       return new Response("bad room code", { status: 400, headers: CORS_HEADERS });
     }
 

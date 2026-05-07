@@ -67,8 +67,8 @@ export interface StateMsg {
 export type GameMsg = InputMsg | StateMsg;
 export type AnyMsg = ServerMsg | GameMsg;
 
-export const ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/I/0/1
-export const ROOM_CODE_LENGTH = 5;
+export const ROOM_CODE_CHARS = "0123456789";
+export const ROOM_CODE_LENGTH = 2;
 
 export function generateRoomCode(): string {
   let s = "";

@@ -138,7 +138,7 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   private async startJoin() {
-    const raw = window.prompt("Enter room code (5 letters/digits):");
+    const raw = window.prompt("Enter 2-digit room code:");
     if (!raw) return;
     const code = raw.trim().toUpperCase();
     if (!isValidRoomCode(code)) {
