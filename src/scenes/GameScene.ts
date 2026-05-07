@@ -4,6 +4,9 @@ import type { FighterInput } from "../input/FighterInput";
 import { Fighter, FighterConfig } from "../entities/Fighter";
 import { AIController } from "../ai/AIController";
 import { NetworkInput } from "../net/NetworkInput";
+import { TouchInput, isTouchDevice } from "../input/TouchInput";
+import { mountTouchOverlay } from "../input/TouchOverlay";
+import { CombinedInput } from "../input/CombinedInput";
 import type { NetClient } from "../net/NetClient";
 import type { FighterSnap, InputMsg, StateMsg } from "../net/Protocol";
 
@@ -68,6 +71,10 @@ export class GameScene extends Phaser.Scene {
   private client: NetClient | null = null;
   private guestKeyboard: KeyboardInput | null = null;
 
+  // Touch input (only set on touch devices)
+  private touchInput: TouchInput | null = null;
+  private unmountTouch: (() => void) | null = null;
+
   constructor() {
     super("GameScene");
   }
@@ -101,6 +108,18 @@ export class GameScene extends Phaser.Scene {
     this.add.rectangle(WORLD_W / 2, GROUND_Y, WORLD_W, 2, 0x6b4a2a);
 
     this.createAnims("fighter", FIGHTER_SHEETS);
+
+    // Mount touch button overlay on touch devices; tear it down when this
+    // scene exits (e.g. R-restart back to lobby).
+    if (isTouchDevice()) {
+      this.touchInput = new TouchInput();
+      this.unmountTouch = mountTouchOverlay(this.touchInput);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        this.unmountTouch?.();
+        this.unmountTouch = null;
+        this.touchInput = null;
+      });
+    }
 
     const sharedBody = {
       spriteKey: "fighter",
@@ -137,8 +156,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupInputsForMode() {
+    const localPlayerInput = (): FighterInput => {
+      const keyboard = new KeyboardInput(this, WASD_BINDINGS);
+      return this.touchInput
+        ? new CombinedInput([keyboard, this.touchInput])
+        : keyboard;
+    };
+
     if (this.mode === "local") {
-      this.p1Input = new KeyboardInput(this, WASD_BINDINGS);
+      this.p1Input = localPlayerInput();
       this.p1.setInput(this.p1Input);
       this.p2Input = new AIController(this.p2, this.p1, "medium");
       this.p2.setInput(this.p2Input);
@@ -154,17 +180,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.role === "host") {
-      // Host runs the simulation. P1 = local keyboard, P2 = remote inputs.
-      this.p1Input = new KeyboardInput(this, WASD_BINDINGS);
+      // Host runs the simulation. P1 = local keyboard (+ touch), P2 = remote.
+      this.p1Input = localPlayerInput();
       this.p1.setInput(this.p1Input);
       const netIn = new NetworkInput();
       this.p2Input = netIn;
       this.p2.setInput(netIn);
       this.client.onInput = (msg: InputMsg) => netIn.applyMessage(msg);
     } else {
-      // Guest doesn't simulate. Local keyboard is captured and forwarded
-      // to the host every frame. Both fighters' visible state is dictated
-      // by incoming snapshots.
+      // Guest doesn't simulate. Local input (keyboard + touch) is captured
+      // and forwarded to the host every frame. Both fighters' visible
+      // state is dictated by incoming snapshots.
       this.guestKeyboard = new KeyboardInput(this, WASD_BINDINGS);
       this.p1.disablePhysics();
       this.p2.disablePhysics();
@@ -250,20 +276,25 @@ export class GameScene extends Phaser.Scene {
     if (this.gameOver) return;
 
     if (this.mode === "online" && this.role === "guest") {
-      // Guest: capture local keyboard, send to host, render incoming state
-      if (this.guestKeyboard && this.client) {
+      // Guest: capture local input (keyboard + touch), forward to host,
+      // render incoming state.
+      if (this.client) {
         const kb = this.guestKeyboard;
+        const ti = this.touchInput;
+        // Tick TouchInput so its edge fields stay coherent even though
+        // we only send raw held-state over the wire.
+        ti?.update();
         const msg: InputMsg = {
           type: "input",
-          leftDown: kb.left.isDown,
-          rightDown: kb.right.isDown,
-          crouchDown: kb.crouch.isDown,
-          blockDown: kb.block.isDown,
-          jumpDown: kb.jump.isDown,
-          attack1Down: kb.attack1.isDown,
-          attack2Down: kb.attack2.isDown,
-          heavyDown: kb.heavy.isDown,
-          dodgeDown: kb.dodge.isDown,
+          leftDown: !!(kb?.left.isDown || ti?.leftDown),
+          rightDown: !!(kb?.right.isDown || ti?.rightDown),
+          crouchDown: !!(kb?.crouch.isDown || ti?.crouchDown),
+          blockDown: !!(kb?.block.isDown || ti?.blockDown),
+          jumpDown: !!(kb?.jump.isDown || ti?.jumpHeld),
+          attack1Down: !!(kb?.attack1.isDown || ti?.attack1Held),
+          attack2Down: !!(kb?.attack2.isDown || ti?.attack2Held),
+          heavyDown: !!(kb?.heavy.isDown || ti?.heavyHeld),
+          dodgeDown: !!(kb?.dodge.isDown || ti?.dodgeHeld),
         };
         this.client.send(msg);
       }

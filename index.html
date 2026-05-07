@@ -2,12 +2,55 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>KungFu</title>
     <style>
-      html, body { margin: 0; padding: 0; background: #111; height: 100%; }
-      body { display: flex; align-items: center; justify-content: center; }
+      html, body { margin: 0; padding: 0; background: #111; height: 100%; overflow: hidden; }
+      body { display: flex; align-items: center; justify-content: center; touch-action: none; }
       #game { image-rendering: pixelated; }
+
+      #touch-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+        user-select: none;
+        -webkit-user-select: none;
+        font-family: -apple-system, system-ui, sans-serif;
+      }
+      #touch-overlay .btn {
+        position: absolute;
+        pointer-events: auto;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.45);
+        background: rgba(40,40,80,0.55);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #touch-overlay .btn.pressed {
+        background: rgba(120,120,200,0.85);
+        border-color: rgba(255,255,255,0.9);
+      }
+      /* D-pad on the bottom-left */
+      #t-left  { bottom: 76px; left: 16px; }
+      #t-right { bottom: 76px; left: 148px; }
+      #t-up    { bottom: 152px; left: 82px; }
+      #t-down  { bottom: 8px;   left: 82px; }
+      /* Action grid on the bottom-right */
+      #t-punch { bottom: 144px; right: 200px; }
+      #t-kick  { bottom: 144px; right: 124px; }
+      #t-heavy { bottom: 144px; right: 16px; background: rgba(80,40,40,0.6); }
+      #t-block { bottom: 64px;  right: 162px; background: rgba(40,80,40,0.6); }
+      #t-dodge { bottom: 64px;  right: 70px;  background: rgba(80,80,40,0.6); }
     </style>
   </head>
   <body>
