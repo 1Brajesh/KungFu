@@ -121,7 +121,10 @@ export class GameScene extends Phaser.Scene {
     this.p2Input = new AIController(this.p2, this.p1, "medium");
     this.p2.setInput(this.p2Input);
 
-    this.physics.add.collider(this.p1.sprite, this.p2.sprite);
+    // No fighter-fighter collider on purpose: with one in place, a falling
+    // fighter (e.g. landing a DownSmash) ends up stuck standing on top of
+    // the opponent. Hit detection is via attack hitboxes in code, so
+    // physical body collision between fighters adds nothing but bugs.
 
     this.createHud();
 
