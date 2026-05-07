@@ -13,7 +13,8 @@ export type FighterStateName =
   | "victory"
   | "knockdown"
   | "crouch"
-  | "lowkick";
+  | "lowkick"
+  | "block";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -162,6 +163,14 @@ export class Fighter {
       return;
     }
 
+    // Block — held key, fully locks the fighter; takeHit applies reduced damage
+    if (this.input.blockDown && body.onFloor()) {
+      body.setVelocityX(0);
+      this.transitionTo("block");
+      this.applyFacing();
+      return;
+    }
+
     // Crouch — held key, locks horizontal movement, enables LowKick variant
     if (this.input.crouchDown && body.onFloor()) {
       body.setVelocityX(0);
@@ -212,6 +221,14 @@ export class Fighter {
 
   takeHit(damage: number) {
     if (this.state === "death") return;
+
+    // Blocking absorbs almost all damage and the fighter stays locked
+    // in block state — no anim interrupt, no knockback.
+    if (this.state === "block") {
+      this.hp = Math.max(0, this.hp - 1);
+      return;
+    }
+
     this.hp -= damage;
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
 

@@ -45,6 +45,7 @@ export class AIController implements FighterInput {
   leftDown = false;
   rightDown = false;
   crouchDown = false;
+  blockDown = false;
   jumpJustPressed = false;
   attack1JustPressed = false;
   attack2JustPressed = false;
