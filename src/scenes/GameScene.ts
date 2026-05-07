@@ -7,8 +7,8 @@ import { AIController } from "../ai/AIController";
 const WORLD_W = 960;
 const WORLD_H = 540;
 const GROUND_Y = 500;
-const FRAME_W = 200;
-const FRAME_H = 200;
+const FRAME_W = 256;
+const FRAME_H = 256;
 
 interface SheetSpec {
   anim: string;
@@ -18,26 +18,15 @@ interface SheetSpec {
   repeat: number;
 }
 
-const HERO1_SHEETS: SheetSpec[] = [
-  { anim: "idle",    file: "Idle",     frames: 8, frameRate: 10, repeat: -1 },
-  { anim: "run",     file: "Run",      frames: 8, frameRate: 14, repeat: -1 },
-  { anim: "jump",    file: "Jump",     frames: 2, frameRate: 6,  repeat: 0 },
-  { anim: "fall",    file: "Fall",     frames: 2, frameRate: 6,  repeat: 0 },
-  { anim: "attack1", file: "Attack1",  frames: 6, frameRate: 18, repeat: 0 },
-  { anim: "attack2", file: "Attack2",  frames: 6, frameRate: 18, repeat: 0 },
-  { anim: "hit",     file: "Take Hit", frames: 4, frameRate: 12, repeat: 0 },
-  { anim: "death",   file: "Death",    frames: 6, frameRate: 8,  repeat: 0 },
-];
-
-const HERO2_SHEETS: SheetSpec[] = [
-  { anim: "idle",    file: "Idle",     frames: 4, frameRate: 8,  repeat: -1 },
-  { anim: "run",     file: "Run",      frames: 8, frameRate: 14, repeat: -1 },
-  { anim: "jump",    file: "Jump",     frames: 2, frameRate: 6,  repeat: 0 },
-  { anim: "fall",    file: "Fall",     frames: 2, frameRate: 6,  repeat: 0 },
-  { anim: "attack1", file: "Attack1",  frames: 4, frameRate: 14, repeat: 0 },
-  { anim: "attack2", file: "Attack2",  frames: 4, frameRate: 14, repeat: 0 },
-  { anim: "hit",     file: "Take hit", frames: 3, frameRate: 12, repeat: 0 },
-  { anim: "death",   file: "Death",    frames: 7, frameRate: 8,  repeat: 0 },
+const FIGHTER_SHEETS: SheetSpec[] = [
+  { anim: "idle",    file: "Idle",      frames: 16, frameRate: 12, repeat: -1 },
+  { anim: "run",     file: "Run",       frames: 16, frameRate: 18, repeat: -1 },
+  { anim: "jump",    file: "JumpStart", frames: 16, frameRate: 22, repeat: 0 },
+  { anim: "fall",    file: "JumpEnd",   frames: 8,  frameRate: 14, repeat: 0 },
+  { anim: "attack1", file: "Punch",     frames: 16, frameRate: 24, repeat: 0 },
+  { anim: "attack2", file: "Kick",      frames: 16, frameRate: 24, repeat: 0 },
+  { anim: "hit",     file: "LightHit",  frames: 15, frameRate: 18, repeat: 0 },
+  { anim: "death",   file: "Death",     frames: 15, frameRate: 12, repeat: 0 },
 ];
 
 type P2Mode = "cpu" | "human";
@@ -63,16 +52,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    for (const s of HERO1_SHEETS) {
-      const url = `/sprites/martial-hero/${encodeURIComponent(s.file)}.png`;
-      this.load.spritesheet(`hero1-${s.anim}`, url, {
-        frameWidth: FRAME_W,
-        frameHeight: FRAME_H,
-      });
-    }
-    for (const s of HERO2_SHEETS) {
-      const url = `/sprites/martial-hero-2/${encodeURIComponent(s.file)}.png`;
-      this.load.spritesheet(`hero2-${s.anim}`, url, {
+    for (const s of FIGHTER_SHEETS) {
+      const url = `/sprites/fighter-hd/${encodeURIComponent(s.file)}.png`;
+      this.load.spritesheet(`fighter-${s.anim}`, url, {
         frameWidth: FRAME_W,
         frameHeight: FRAME_H,
       });
@@ -94,34 +76,28 @@ export class GameScene extends Phaser.Scene {
     );
     this.add.rectangle(WORLD_W / 2, GROUND_Y, WORLD_W, 2, 0x6b4a2a);
 
-    this.createAnims("hero1", HERO1_SHEETS);
-    this.createAnims("hero2", HERO2_SHEETS);
+    this.createAnims("fighter", FIGHTER_SHEETS);
 
     const sharedBody = {
-      scale: 2.5,
-      bodySize: { w: 40, h: 100 },
-      bodyOffset: { x: 80, y: 75 },
+      spriteKey: "fighter",
+      scale: 1.2,
+      bodySize: { w: 60, h: 150 },
+      bodyOffset: { x: 100, y: 60 },
+      speed: 260,
+      jumpVelocity: -700,
+      hp: 100,
+      attackReach: 120,
+      attackDamage: 10,
     };
 
     const p1Config: FighterConfig = {
       ...sharedBody,
-      spriteKey: "hero1",
       facing: "right",
-      speed: 260,
-      jumpVelocity: -700,
-      hp: 100,
-      attackReach: 110,
-      attackDamage: 10,
     };
     const p2Config: FighterConfig = {
       ...sharedBody,
-      spriteKey: "hero2",
       facing: "left",
-      speed: 240,
-      jumpVelocity: -700,
-      hp: 100,
-      attackReach: 110,
-      attackDamage: 10,
+      tint: 0x6699ff,
     };
 
     this.p1 = new Fighter(this, 280, 200, p1Config);
@@ -133,7 +109,6 @@ export class GameScene extends Phaser.Scene {
     this.p1Input = new KeyboardInput(this, WASD_BINDINGS);
     this.p1.setInput(this.p1Input);
 
-    // P2 starts as CPU; press T to swap to human (arrow keys + Numpad 1/2)
     this.p2Input = new AIController(this.p2, this.p1, "medium");
     this.p2.setInput(this.p2Input);
 

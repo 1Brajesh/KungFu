@@ -22,6 +22,7 @@ export interface FighterConfig {
   bodyOffset: { x: number; y: number };
   attackReach: number;
   attackDamage: number;
+  tint?: number;
 }
 
 const ATTACK_DAMAGE = 10;
@@ -60,6 +61,10 @@ export class Fighter {
     this.attackDamage = config.attackDamage ?? ATTACK_DAMAGE;
     this.hp = config.hp;
     this.maxHp = config.hp;
+
+    if (config.tint !== undefined) {
+      this.sprite.setTint(config.tint);
+    }
 
     this.applyFacing();
     this.playAnim("idle");

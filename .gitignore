@@ -4,3 +4,7 @@ dist
 *.log
 .claude/settings.local.json
 .wrangler
+Assets/PSD/
+Assets/Samurai/
+Assets/Samurai_Archer/
+Assets/Samurai_Commander/
