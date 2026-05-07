@@ -49,6 +49,7 @@ export class AIController implements FighterInput {
   jumpJustPressed = false;
   attack1JustPressed = false;
   attack2JustPressed = false;
+  dodgeJustPressed = false;
 
   private intent: Intent = "approach";
   private nextDecisionAt = 0;

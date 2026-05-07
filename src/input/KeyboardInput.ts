@@ -6,6 +6,7 @@ export interface ControlBindings {
   right: number;
   crouch: number;
   block: number;
+  dodge: number;
   jump: number;
   attack1: number;
   attack2: number;
@@ -18,6 +19,7 @@ export const WASD_BINDINGS: ControlBindings = {
   right: KC.D,
   crouch: KC.S,
   block: KC.I,
+  dodge: KC.U,
   jump: KC.W,
   attack1: KC.J,
   attack2: KC.K,
@@ -28,6 +30,7 @@ export const ARROW_BINDINGS: ControlBindings = {
   right: KC.RIGHT,
   crouch: KC.DOWN,
   block: KC.NUMPAD_THREE,
+  dodge: KC.NUMPAD_FIVE,
   jump: KC.UP,
   attack1: KC.NUMPAD_ONE,
   attack2: KC.NUMPAD_TWO,
@@ -41,11 +44,13 @@ export class KeyboardInput implements FighterInput {
   jumpJustPressed = false;
   attack1JustPressed = false;
   attack2JustPressed = false;
+  dodgeJustPressed = false;
 
   private readonly left: Phaser.Input.Keyboard.Key;
   private readonly right: Phaser.Input.Keyboard.Key;
   private readonly crouch: Phaser.Input.Keyboard.Key;
   private readonly block: Phaser.Input.Keyboard.Key;
+  private readonly dodge: Phaser.Input.Keyboard.Key;
   private readonly jump: Phaser.Input.Keyboard.Key;
   private readonly attack1: Phaser.Input.Keyboard.Key;
   private readonly attack2: Phaser.Input.Keyboard.Key;
@@ -56,6 +61,7 @@ export class KeyboardInput implements FighterInput {
     this.right = kb.addKey(bindings.right);
     this.crouch = kb.addKey(bindings.crouch);
     this.block = kb.addKey(bindings.block);
+    this.dodge = kb.addKey(bindings.dodge);
     this.jump = kb.addKey(bindings.jump);
     this.attack1 = kb.addKey(bindings.attack1);
     this.attack2 = kb.addKey(bindings.attack2);
@@ -70,5 +76,6 @@ export class KeyboardInput implements FighterInput {
     this.jumpJustPressed = JD(this.jump);
     this.attack1JustPressed = JD(this.attack1);
     this.attack2JustPressed = JD(this.attack2);
+    this.dodgeJustPressed = JD(this.dodge);
   }
 }

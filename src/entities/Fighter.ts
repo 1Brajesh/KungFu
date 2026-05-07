@@ -14,7 +14,8 @@ export type FighterStateName =
   | "knockdown"
   | "crouch"
   | "lowkick"
-  | "block";
+  | "block"
+  | "dodge";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -48,6 +49,8 @@ export class Fighter {
   private readonly attackDamage: number;
   private isAttacking = false;
   private attackHasLanded = false;
+  private lastDodgeAt = 0;
+  private static readonly DODGE_COOLDOWN_MS = 800;
 
   constructor(scene: Phaser.Scene, x: number, y: number, config: FighterConfig) {
     this.sprite = scene.physics.add.sprite(x, y, `${config.spriteKey}-idle`);
@@ -101,6 +104,10 @@ export class Fighter {
           this.state = "idle";
           this.playAnim("idle");
         }
+        if (anim.key.endsWith("-dodge") && this.state === "dodge") {
+          this.state = "idle";
+          this.playAnim("idle");
+        }
         if (anim.key.endsWith("-death") || anim.key.endsWith("-victory")) {
           this.sprite.anims.pause();
         }
@@ -141,8 +148,12 @@ export class Fighter {
       this.facing = this.opponent.sprite.x < this.sprite.x ? "left" : "right";
     }
 
-    if (this.state === "hit" || this.state === "knockdown") {
-      // Knockback velocity decays naturally rather than being zeroed instantly
+    if (
+      this.state === "hit" ||
+      this.state === "knockdown" ||
+      this.state === "dodge"
+    ) {
+      // Knockback / dodge velocity decays naturally rather than being zeroed
       const decayed = body.velocity.x * 0.9;
       body.setVelocityX(Math.abs(decayed) < 5 ? 0 : decayed);
       this.applyFacing();
@@ -160,6 +171,16 @@ export class Fighter {
       body.setVelocityX(0);
       if (body.onFloor()) this.transitionTo("idle");
       this.applyFacing();
+      return;
+    }
+
+    // Dodge — edge-triggered, top priority among inputs (cancels into roll)
+    if (
+      this.input.dodgeJustPressed &&
+      body.onFloor() &&
+      performance.now() - this.lastDodgeAt >= Fighter.DODGE_COOLDOWN_MS
+    ) {
+      this.startDodge();
       return;
     }
 
@@ -221,6 +242,9 @@ export class Fighter {
 
   takeHit(damage: number) {
     if (this.state === "death") return;
+
+    // Dodging is fully invulnerable
+    if (this.state === "dodge") return;
 
     // Blocking absorbs almost all damage and the fighter stays locked
     // in block state — no anim interrupt, no knockback.
@@ -320,5 +344,15 @@ export class Fighter {
     this.sprite.play(`${this.spriteKey}-lowkick`);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
+  }
+
+  private startDodge() {
+    this.lastDodgeAt = performance.now();
+    this.state = "dodge";
+    this.isAttacking = false;
+    this.sprite.play(`${this.spriteKey}-dodge`);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const dir = this.facing === "right" ? 1 : -1;
+    body.setVelocityX(dir * 800);
   }
 }

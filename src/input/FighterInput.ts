@@ -6,5 +6,6 @@ export interface FighterInput {
   jumpJustPressed: boolean;
   attack1JustPressed: boolean;
   attack2JustPressed: boolean;
+  dodgeJustPressed: boolean;
   update(): void;
 }
