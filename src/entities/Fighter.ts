@@ -9,7 +9,8 @@ export type FighterStateName =
   | "attack1"
   | "attack2"
   | "hit"
-  | "death";
+  | "death"
+  | "victory";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -84,7 +85,7 @@ export class Fighter {
           this.state = "idle";
           this.playAnim("idle");
         }
-        if (anim.key.endsWith("-death")) {
+        if (anim.key.endsWith("-death") || anim.key.endsWith("-victory")) {
           this.sprite.anims.pause();
         }
       },
@@ -108,9 +109,17 @@ export class Fighter {
   }
 
   update() {
-    if (this.state === "death") return;
+    if (this.state === "death" || this.state === "victory") return;
 
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+
+    if (this.opponent && !this.opponent.isAlive()) {
+      body.setVelocityX(0);
+      this.state = "victory";
+      this.sprite.play(`${this.spriteKey}-victory`);
+      this.applyFacing();
+      return;
+    }
 
     if (this.opponent && body.onFloor() && !this.isAttacking && this.state !== "hit") {
       this.facing = this.opponent.sprite.x < this.sprite.x ? "left" : "right";
