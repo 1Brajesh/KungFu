@@ -9,6 +9,10 @@ new Phaser.Game({
   height: 540,
   backgroundColor: "#1a1a1a",
   pixelArt: false,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
   physics: {
     default: "arcade",
     arcade: {

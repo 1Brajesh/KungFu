@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>KungFu</title>
     <style>
-      html, body { margin: 0; padding: 0; background: #111; height: 100%; overflow: hidden; }
-      body { display: flex; align-items: center; justify-content: center; touch-action: none; }
-      #game { image-rendering: pixelated; }
+      html, body { margin: 0; padding: 0; background: #111; width: 100%; height: 100%; overflow: hidden; }
+      body { touch-action: none; }
+      #game { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+      #game canvas { display: block; }
 
       #touch-overlay {
         position: fixed;
