@@ -33,6 +33,8 @@ const FIGHTER_SHEETS: SheetSpec[] = [
   { anim: "lowkick",   file: "LowKick",   frames: 16, frameRate: 22, repeat: 0 },
   { anim: "block",     file: "Block",     frames: 16, frameRate: 18, repeat: 0 },
   { anim: "dodge",     file: "DodgeRoll", frames: 16, frameRate: 26, repeat: 0 },
+  { anim: "heavy",     file: "HeavySmash",frames: 15, frameRate: 20, repeat: 0 },
+  { anim: "combo",     file: "Combo1",    frames: 15, frameRate: 22, repeat: 0 },
 ];
 
 type P2Mode = "cpu" | "human";
@@ -125,7 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.add.text(
       WORLD_W / 2,
       10,
-      "WASD + J/K   S=crouch  I=block  U=dodge   T: toggle CPU",
+      "WASD  J=punch K=kick L=heavy  S=crouch I=block U=dodge   T: toggle CPU",
       { fontSize: "14px", color: "#cccccc" },
     ).setOrigin(0.5, 0);
 

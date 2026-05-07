@@ -10,6 +10,7 @@ export interface ControlBindings {
   jump: number;
   attack1: number;
   attack2: number;
+  heavy: number;
 }
 
 const KC = Phaser.Input.Keyboard.KeyCodes;
@@ -23,6 +24,7 @@ export const WASD_BINDINGS: ControlBindings = {
   jump: KC.W,
   attack1: KC.J,
   attack2: KC.K,
+  heavy: KC.L,
 };
 
 export const ARROW_BINDINGS: ControlBindings = {
@@ -34,6 +36,7 @@ export const ARROW_BINDINGS: ControlBindings = {
   jump: KC.UP,
   attack1: KC.NUMPAD_ONE,
   attack2: KC.NUMPAD_TWO,
+  heavy: KC.NUMPAD_FOUR,
 };
 
 export class KeyboardInput implements FighterInput {
@@ -44,6 +47,7 @@ export class KeyboardInput implements FighterInput {
   jumpJustPressed = false;
   attack1JustPressed = false;
   attack2JustPressed = false;
+  heavyJustPressed = false;
   dodgeJustPressed = false;
 
   private readonly left: Phaser.Input.Keyboard.Key;
@@ -54,6 +58,7 @@ export class KeyboardInput implements FighterInput {
   private readonly jump: Phaser.Input.Keyboard.Key;
   private readonly attack1: Phaser.Input.Keyboard.Key;
   private readonly attack2: Phaser.Input.Keyboard.Key;
+  private readonly heavy: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene, bindings: ControlBindings) {
     const kb = scene.input.keyboard!;
@@ -65,6 +70,7 @@ export class KeyboardInput implements FighterInput {
     this.jump = kb.addKey(bindings.jump);
     this.attack1 = kb.addKey(bindings.attack1);
     this.attack2 = kb.addKey(bindings.attack2);
+    this.heavy = kb.addKey(bindings.heavy);
   }
 
   update() {
@@ -76,6 +82,7 @@ export class KeyboardInput implements FighterInput {
     this.jumpJustPressed = JD(this.jump);
     this.attack1JustPressed = JD(this.attack1);
     this.attack2JustPressed = JD(this.attack2);
+    this.heavyJustPressed = JD(this.heavy);
     this.dodgeJustPressed = JD(this.dodge);
   }
 }

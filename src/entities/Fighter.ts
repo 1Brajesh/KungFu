@@ -15,7 +15,9 @@ export type FighterStateName =
   | "crouch"
   | "lowkick"
   | "block"
-  | "dodge";
+  | "dodge"
+  | "heavy"
+  | "combo";
 
 export interface FighterConfig {
   spriteKey: string;
@@ -49,8 +51,11 @@ export class Fighter {
   private readonly attackDamage: number;
   private isAttacking = false;
   private attackHasLanded = false;
+  private currentAttackDamage = 0;
+  private lastPunchEndedAt = 0;
   private lastDodgeAt = 0;
   private static readonly DODGE_COOLDOWN_MS = 800;
+  private static readonly COMBO_WINDOW_MS = 400;
 
   constructor(scene: Phaser.Scene, x: number, y: number, config: FighterConfig) {
     this.sprite = scene.physics.add.sprite(x, y, `${config.spriteKey}-idle`);
@@ -83,14 +88,21 @@ export class Fighter {
         if (
           anim.key.endsWith("-attack1") ||
           anim.key.endsWith("-attack2") ||
-          anim.key.endsWith("-lowkick")
+          anim.key.endsWith("-lowkick") ||
+          anim.key.endsWith("-heavy") ||
+          anim.key.endsWith("-combo")
         ) {
+          if (anim.key.endsWith("-attack1")) {
+            this.lastPunchEndedAt = performance.now();
+          }
           this.isAttacking = false;
           this.attackHasLanded = false;
           if (
             this.state === "attack1" ||
             this.state === "attack2" ||
-            this.state === "lowkick"
+            this.state === "lowkick" ||
+            this.state === "heavy" ||
+            this.state === "combo"
           ) {
             this.state = "idle";
             this.playAnim("idle");
@@ -205,8 +217,17 @@ export class Fighter {
     }
 
     if (body.onFloor()) {
+      if (this.input.heavyJustPressed) {
+        this.startHeavy();
+        return;
+      }
       if (this.input.attack1JustPressed) {
-        this.startAttack(1);
+        const sinceLastPunch = performance.now() - this.lastPunchEndedAt;
+        if (sinceLastPunch <= Fighter.COMBO_WINDOW_MS) {
+          this.startCombo();
+        } else {
+          this.startAttack(1);
+        }
         return;
       }
       if (this.input.attack2JustPressed) {
@@ -309,7 +330,7 @@ export class Fighter {
     const oppHurt = this.opponent.getHurtbox();
     if (Phaser.Geom.Intersects.RectangleToRectangle(myHit, oppHurt)) {
       this.attackHasLanded = true;
-      this.opponent.takeHit(this.attackDamage);
+      this.opponent.takeHit(this.currentAttackDamage);
     }
   }
 
@@ -330,6 +351,7 @@ export class Fighter {
   private startAttack(which: 1 | 2) {
     this.isAttacking = true;
     this.attackHasLanded = false;
+    this.currentAttackDamage = this.attackDamage;
     const key = which === 1 ? "attack1" : "attack2";
     this.state = key;
     this.sprite.play(`${this.spriteKey}-${key}`);
@@ -340,8 +362,30 @@ export class Fighter {
   private startLowKick() {
     this.isAttacking = true;
     this.attackHasLanded = false;
+    this.currentAttackDamage = this.attackDamage;
     this.state = "lowkick";
     this.sprite.play(`${this.spriteKey}-lowkick`);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+  }
+
+  private startHeavy() {
+    this.isAttacking = true;
+    this.attackHasLanded = false;
+    this.currentAttackDamage = 25;
+    this.state = "heavy";
+    this.sprite.play(`${this.spriteKey}-heavy`);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+  }
+
+  private startCombo() {
+    this.isAttacking = true;
+    this.attackHasLanded = false;
+    this.currentAttackDamage = 20;
+    this.lastPunchEndedAt = 0; // can't combo from a combo
+    this.state = "combo";
+    this.sprite.play(`${this.spriteKey}-combo`);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
   }
