@@ -143,6 +143,15 @@ export class Fighter {
     return this.state !== "death";
   }
 
+  enterVictory() {
+    if (this.state === "death" || this.state === "victory") return;
+    this.state = "victory";
+    this.isAttacking = false;
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+    this.sprite.play(`${this.spriteKey}-victory`);
+  }
+
   update() {
     if (this.state === "death" || this.state === "victory") return;
 
@@ -285,8 +294,14 @@ export class Fighter {
       this.hp = 0;
       this.state = "death";
       this.isAttacking = false;
-      body.setVelocityX(knockbackDir * 100);
+      body.setVelocityX(0); // corpse does not slide
       this.sprite.play(`${this.spriteKey}-death`);
+      // The killing blow happens on the attacker's frame; gameOver will
+      // halt fighter.update() next frame, so trigger victory on the
+      // survivor right now while we still have the chance.
+      if (this.opponent && this.opponent.isAlive()) {
+        this.opponent.enterVictory();
+      }
     } else if (damage >= 20) {
       this.state = "knockdown";
       this.isAttacking = false;
